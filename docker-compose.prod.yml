@@ -156,6 +156,7 @@ services:
       - sav_pdfs:/app/pdfs
     networks:
       - primehome_net
+      - odoo_net
 
   sav_frontend:
     image: ghcr.io/yassirskalli/primehome-sav-frontend:latest
