@@ -72,7 +72,11 @@ services:
       erp_db:
         condition: service_healthy
     environment:
-      DATABASE_URL: postgresql://erp_user:${ERP_DB_PASSWORD}@erp_db:5432/erp_suivi
+      DB_HOST: erp_db
+      DB_PORT: "5432"
+      DB_NAME: erp_suivi
+      DB_USER: erp_user
+      DB_PASSWORD: ${ERP_DB_PASSWORD:?ERP_DB_PASSWORD requis}
       JWT_SECRET_KEY: ${ERP_JWT_SECRET:?ERP_JWT_SECRET requis}
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-https://erp.miele.co.ma}
       ODOO_URL: http://odoo:8069
