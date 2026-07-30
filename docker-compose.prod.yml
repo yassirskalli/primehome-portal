@@ -142,6 +142,11 @@ services:
       SMTP_PORT: ${SMTP_PORT:-587}
       SMTP_USER: ${SMTP_USER:-sav@primehome.ma}
       SMTP_PASSWORD: ${SMTP_PASSWORD:?SMTP_PASSWORD requis}
+      ODOO_URL: http://odoo:8069
+      ODOO_DB: ${ODOO_DB:-odoo}
+      ODOO_USER: ${ODOO_USER:?ODOO_USER requis}
+      ODOO_PASSWORD: ${ODOO_PASSWORD:?ODOO_PASSWORD requis}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-https://erp.miele.co.ma}
       FRONTEND_URL: https://erp.miele.co.ma/sav
       UPLOAD_DIR: /app/uploads
       PDF_OUTPUT_DIR: /app/pdfs
@@ -193,8 +198,9 @@ services:
       ORDER_TRACKING_URL: http://erp_api:8000
       ODOO_URL: http://odoo:8069
       ODOO_DB: ${ODOO_DB:-odoo}
-      ODOO_USER: ${ODOO_USER}
-      ODOO_PASSWORD: ${ODOO_PASSWORD}
+      ODOO_USER: ${ODOO_USER:?ODOO_USER requis}
+      ODOO_PASSWORD: ${ODOO_PASSWORD:?ODOO_PASSWORD requis}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-https://erp.miele.co.ma}
       DEBUG: "false"
     volumes:
       - devis_pdfs:/app/pdfs
