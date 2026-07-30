@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Prime Home — ERP</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ── Arrière-plan ── */
+    .bg {
+      position: fixed; inset: 0;
+      background: url('/showroom.jpg') center center / cover no-repeat;
+      z-index: 0;
+    }
+    .bg-overlay {
+      position: fixed; inset: 0;
+      background: linear-gradient(135deg, rgba(10,10,15,0.78) 0%, rgba(10,10,20,0.62) 60%, rgba(10,10,15,0.72) 100%);
+      z-index: 1;
+    }
+
+    /* ── Contenu ── */
+    .page { position: relative; z-index: 2; min-height: 100vh; display: flex; flex-direction: column; }
+
+    /* ── Header ── */
+    header {
+      padding: 22px 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .logo { display: flex; align-items: center; gap: 14px; }
+    .logo img { height: 48px; width: auto; border-radius: 6px; }
+    .logo-sep { width: 1px; height: 26px; background: rgba(255,255,255,0.2); }
+    .logo-text { font-size: 12px; letter-spacing: 2px; color: rgba(255,255,255,0.55); text-transform: uppercase; font-weight: 500; }
+    .miele-chip {
+      background: #CC0000;
+      color: white;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      padding: 4px 12px;
+      text-transform: uppercase;
+    }
+
+    /* ══════════════ PAGE LOGIN ══════════════ */
+    #page-login {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 24px;
+    }
+
+    .login-card {
+      width: 100%;
+      max-width: 380px;
+      background: rgba(255,255,255,0.06);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 20px;
+      padding: 44px 40px;
+      box-shadow: 0 32px 80px rgba(0,0,0,0.45);
+    }
+
+    .login-headline {
+      text-align: center;
+      margin-bottom: 36px;
+    }
+    .login-headline h1 {
+      font-size: 22px;
+      font-weight: 700;
+      color: #ffffff;
+      letter-spacing: -0.3px;
+    }
+    .login-slogan {
+      margin-top: 14px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
+      color: #CC0000;
+      line-height: 1.8;
+    }
+    .login-slogan span {
+      font-size: 9px;
+      font-weight: 500;
+      letter-spacing: 2px;
+      color: rgba(255,255,255,0.35);
+    }
+    .login-sub {
+      margin-top: 10px;
+      font-size: 12px;
+      color: rgba(255,255,255,0.35);
+    }
+
+    .form-group { margin-bottom: 18px; }
+    .form-group label {
+      display: block;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.5);
+      margin-bottom: 8px;
+    }
+    .form-group input {
+      width: 100%;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.14);
+      border-radius: 10px;
+      padding: 13px 16px;
+      font-size: 14px;
+      color: #fff;
+      outline: none;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .form-group input::placeholder { color: rgba(255,255,255,0.25); }
+    .form-group input:focus {
+      border-color: rgba(204,0,0,0.7);
+      background: rgba(255,255,255,0.11);
+    }
+
+    .btn-login {
+      width: 100%;
+      margin-top: 8px;
+      padding: 14px;
+      background: #CC0000;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+    }
+    .btn-login:hover { background: #b30000; }
+    .btn-login:active { transform: scale(0.98); }
+    .btn-login:disabled { background: #666; cursor: not-allowed; }
+
+    .login-error {
+      margin-top: 14px;
+      padding: 10px 14px;
+      background: rgba(220,38,38,0.18);
+      border: 1px solid rgba(220,38,38,0.35);
+      border-radius: 8px;
+      font-size: 13px;
+      color: #fca5a5;
+      text-align: center;
+      display: none;
+    }
+
+    /* ══════════════ PAGE DASHBOARD ══════════════ */
+    #page-dashboard { flex: 1; display: none; flex-direction: column; }
+
+    .dash-hero {
+      padding: 52px 48px 20px;
+    }
+    .dash-greeting {
+      font-size: 12px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.4);
+      margin-bottom: 8px;
+    }
+    .dash-title {
+      font-size: 32px;
+      font-weight: 700;
+      color: #ffffff;
+      letter-spacing: -0.5px;
+    }
+    .dash-title span { color: #CC0000; }
+    .dash-sub {
+      margin-top: 8px;
+      font-size: 14px;
+      color: rgba(255,255,255,0.4);
+    }
+
+    .dash-modules {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 20px;
+      padding: 32px 48px 48px;
+      max-width: 1100px;
+    }
+
+    .module-card {
+      background: rgba(255,255,255,0.06);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 18px;
+      padding: 32px 28px;
+      text-decoration: none;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      transition: border-color 0.2s, transform 0.18s, box-shadow 0.2s;
+      cursor: pointer;
+    }
+    .module-card:hover {
+      border-color: rgba(204,0,0,0.5);
+      transform: translateY(-4px);
+      box-shadow: 0 20px 50px rgba(0,0,0,0.35);
+    }
+
+    .module-icon {
+      width: 52px; height: 52px;
+      border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 26px;
+    }
+    .icon-red   { background: rgba(204,0,0,0.18); }
+    .icon-blue  { background: rgba(59,130,246,0.18); }
+    .icon-green { background: rgba(16,185,129,0.18); }
+    .icon-gray  { background: rgba(156,163,175,0.25); }
+
+    .module-title {
+      font-size: 17px;
+      font-weight: 600;
+      color: #ffffff;
+    }
+    .module-desc {
+      font-size: 13px;
+      color: rgba(255,255,255,0.45);
+      line-height: 1.65;
+      flex: 1;
+    }
+    .module-cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      color: #CC0000;
+    }
+    .module-cta::after { content: '→'; }
+
+    .dash-user-bar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .user-avatar {
+      width: 34px; height: 34px;
+      border-radius: 50%;
+      background: rgba(204,0,0,0.3);
+      border: 1px solid rgba(204,0,0,0.5);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px;
+      font-weight: 700;
+      color: #fff;
+    }
+    .user-name { font-size: 13px; color: rgba(255,255,255,0.65); }
+    .btn-logout {
+      background: none;
+      border: 1px solid rgba(255,255,255,0.15);
+      color: rgba(255,255,255,0.4);
+      font-size: 12px;
+      padding: 5px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: border-color 0.2s, color 0.2s;
+      margin-left: 6px;
+    }
+    .btn-logout:hover { border-color: rgba(255,255,255,0.4); color: rgba(255,255,255,0.8); }
+
+    /* Footer */
+    .portal-footer {
+      margin-top: auto;
+      padding: 16px 48px;
+      font-size: 11px;
+      color: rgba(255,255,255,0.2);
+      letter-spacing: 0.5px;
+      border-top: 1px solid rgba(255,255,255,0.06);
+    }
+
+    @media (max-width: 640px) {
+      header { padding: 18px 20px; }
+      .dash-hero { padding: 36px 20px 12px; }
+      .dash-modules { padding: 20px; }
+      .dash-title { font-size: 24px; }
+      .login-card { padding: 32px 24px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg"></div>
+<div class="bg-overlay"></div>
+
+<div class="page">
+
+  <!-- Header commun -->
+  <header>
+    <div class="logo">
+      <img src="/primehome-logo.jpg" alt="Prime Home" />
+      <div class="logo-sep"></div>
+      <span class="logo-text">Prime Home SARL — ERP</span>
+    </div>
+    <div class="dash-user-bar" id="user-bar" style="display:none">
+      <div class="user-avatar" id="user-avatar">?</div>
+      <span class="user-name" id="user-name-label"></span>
+      <button class="btn-logout" onclick="logout()">Déconnexion</button>
+    </div>
+    <div id="miele-badge" class="miele-chip">Miele Partner</div>
+  </header>
+
+  <!-- ── PAGE LOGIN ── -->
+  <div id="page-login">
+    <div class="login-card">
+      <div class="login-headline">
+        <h1>Bienvenue</h1>
+        <p class="login-slogan">PR1ME-HOME<br><span>IT'S ABOUT STYLE, SOPHISTICATION AND TASTE</span></p>
+        <p class="login-sub">Connectez-vous pour accéder à votre espace</p>
+      </div>
+      <form id="login-form" onsubmit="doLogin(event)">
+        <div class="form-group">
+          <label for="username">Identifiant</label>
+          <input id="username" type="text" placeholder="Votre identifiant" autocomplete="username" required />
+        </div>
+        <div class="form-group">
+          <label for="password">Mot de passe</label>
+          <input id="password" type="password" placeholder="••••••••" autocomplete="current-password" required />
+        </div>
+        <button type="submit" class="btn-login" id="btn-login">Se connecter</button>
+        <div class="login-error" id="login-error">Identifiant ou mot de passe incorrect.</div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ── PAGE DASHBOARD ── -->
+  <div id="page-dashboard">
+    <div class="dash-hero">
+      <div class="dash-greeting">Tableau de bord</div>
+      <div class="dash-title">Vos <span>applications</span></div>
+      <div class="dash-sub" id="dash-subtitle">Sélectionnez un module pour commencer</div>
+    </div>
+    <div class="dash-modules" id="dash-modules"></div>
+    <div class="portal-footer">Prime Home SARL &nbsp;·&nbsp; Partenaire Officiel Miele &nbsp;·&nbsp; Casablanca</div>
+  </div>
+
+</div>
+
+<script>
+  const ERP_API = '/commandes/api';
+
+  const MODULES = {
+    commandes: {
+      title: 'Suivi Commandes',
+      desc: 'Commandes clients, paiements, livraisons et synchronisation Odoo.',
+      icon: '📦',
+      iconClass: 'icon-red',
+      href: '/commandes',
+      roles: ['admin', 'commercial', 'odoo_manager', 'compta', 'sav'],
+    },
+    sav: {
+      title: 'SAV',
+      desc: 'Service après-vente — réception, diagnostic, réparation et facturation.',
+      icon: '🔧',
+      iconClass: 'icon-blue',
+      href: '/sav',
+      roles: ['admin', 'commercial', 'odoo_manager', 'sav_manager', 'technicien'],
+    },
+    devis: {
+      title: 'Générateur de Devis',
+      desc: 'Création et suivi des devis commerciaux avec catalogue Miele.',
+      icon: '📄',
+      iconClass: 'icon-green',
+      href: '/devis',
+      roles: ['admin', 'commercial', 'odoo_manager'],
+    },
+    admin: {
+      title: 'Administration',
+      desc: 'Gestion des utilisateurs, rôles et accès aux applications.',
+      icon: '⚙️',
+      iconClass: 'icon-gray',
+      href: '/admin',
+      roles: ['admin'],
+    },
+  };
+
+  function getToken() { return localStorage.getItem('portal_token'); }
+  function getRoles() { try { return JSON.parse(localStorage.getItem('portal_roles') || '[]'); } catch { return []; } }
+  function getUsername() { return localStorage.getItem('portal_user') || ''; }
+
+  function parseJwt(token) {
+    try {
+      return JSON.parse(atob(token.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')));
+    } catch { return null; }
+  }
+
+  async function doLogin(e) {
+    e.preventDefault();
+    const btn = document.getElementById('btn-login');
+    const err = document.getElementById('login-error');
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value;
+
+    btn.disabled = true;
+    btn.textContent = 'Connexion…';
+    err.style.display = 'none';
+
+    try {
+      // ── 1. Auth ERP (source de vérité des rôles portail)
+      const erpRes = await fetch(ERP_API + '/auth/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password }),
+      });
+      if (!erpRes.ok) throw new Error('auth');
+      const erpData = await erpRes.json();
+      const payload = parseJwt(erpData.access_token);
+      const roles = payload?.roles || [];
+
+      // Secret JWT partagé → un seul token valide pour toutes les apps
+      const token = erpData.access_token;
+      localStorage.setItem('portal_token', token);
+      localStorage.setItem('portal_roles', JSON.stringify(roles));
+      localStorage.setItem('portal_user',  username);
+      localStorage.setItem('erp_token',    token);
+      localStorage.setItem('erp_user',     username);
+      localStorage.setItem('devis_token',  token);
+      localStorage.setItem('devis_user',   username);
+      localStorage.setItem('access_token', token);   // SAV
+
+      showDashboard(username, roles);
+    } catch {
+      err.style.display = 'block';
+      btn.disabled = false;
+      btn.textContent = 'Se connecter';
+    }
+  }
+
+  function showDashboard(username, roles) {
+    document.getElementById('page-login').style.display = 'none';
+    document.getElementById('miele-badge').style.display = 'none';
+
+    const dash = document.getElementById('page-dashboard');
+    dash.style.display = 'flex';
+
+    // User bar
+    const bar = document.getElementById('user-bar');
+    bar.style.display = 'flex';
+    document.getElementById('user-avatar').textContent = username[0].toUpperCase();
+    document.getElementById('user-name-label').textContent = username;
+
+    // Subtitle
+    const roleLabel = roles.includes('admin') ? 'Administrateur'
+      : roles.includes('odoo_manager') ? 'Responsable Odoo'
+      : roles.includes('commercial') ? 'Commercial'
+      : roles.includes('sav') ? 'Technicien SAV'
+      : roles.includes('compta') ? 'Comptabilité'
+      : roles.join(', ');
+    document.getElementById('dash-subtitle').textContent = `Connecté en tant que ${roleLabel}`;
+
+    // Modules
+    const container = document.getElementById('dash-modules');
+    container.innerHTML = '';
+    let count = 0;
+    for (const [key, mod] of Object.entries(MODULES)) {
+      if (!roles.some(r => mod.roles.includes(r))) continue;
+      count++;
+      const card = document.createElement('a');
+      card.href = mod.href;
+      card.className = 'module-card';
+      card.innerHTML = `
+        <div class="module-icon ${mod.iconClass}">${mod.icon}</div>
+        <div>
+          <div class="module-title">${mod.title}</div>
+          <div class="module-desc">${mod.desc}</div>
+        </div>
+        <span class="module-cta">Accéder</span>
+      `;
+      container.appendChild(card);
+    }
+    if (count === 0) {
+      container.innerHTML = '<p style="color:rgba(255,255,255,0.4);font-size:14px">Aucune application disponible pour ce profil.</p>';
+    }
+  }
+
+  function logout() {
+    ['portal_token','portal_roles','portal_user',
+     'erp_token','erp_user',
+     'devis_token','devis_user',
+     'access_token'].forEach(k => localStorage.removeItem(k));
+    document.getElementById('page-login').style.display = 'flex';
+    document.getElementById('page-dashboard').style.display = 'none';
+    document.getElementById('user-bar').style.display = 'none';
+    document.getElementById('miele-badge').style.display = 'block';
+    document.getElementById('username').value = '';
+    document.getElementById('password').value = '';
+  }
+
+  // Auto-login si token valide
+  (function init() {
+    const token = getToken();
+    if (!token) return;
+    const payload = parseJwt(token);
+    if (!payload || payload.exp * 1000 < Date.now()) {
+      logout();
+      return;
+    }
+    showDashboard(getUsername(), getRoles());
+  })();
+</script>
+</body>
+</html>

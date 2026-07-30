@@ -1,0 +1,238 @@
+version: "3.9"
+
+# ============================================================
+# Prime Home ERP — Stack unifiée
+# Portail : http://localhost        (nginx port 80)
+# ERP      : http://localhost/erp   (Order Tracking)
+# SAV      : http://localhost/sav
+# Devis    : http://localhost/devis
+# ============================================================
+
+services:
+
+  # ─── NGINX (portail + reverse proxy) ────────────────────
+  nginx:
+    image: nginx:alpine
+    container_name: primehome_nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./portal:/usr/share/nginx/html:ro
+    depends_on:
+      - erp_frontend
+      - sav_frontend
+      - devis_frontend
+    networks:
+      - primehome_net
+
+  # ─── ORDER TRACKING (ERP) ───────────────────────────────
+  erp_db:
+    image: postgres:15-alpine
+    container_name: primehome_erp_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: erp_suivi
+      POSTGRES_USER: erp_user
+      POSTGRES_PASSWORD: changeme
+    volumes:
+      - erp_db_data:/var/lib/postgresql/data
+    networks:
+      - primehome_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U erp_user -d erp_suivi"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  erp_api:
+    build:
+      context: ../miele_erp/app
+      dockerfile: Dockerfile
+    container_name: primehome_erp_api
+    restart: unless-stopped
+    depends_on:
+      erp_db:
+        condition: service_healthy
+    env_file:
+      - ../miele_erp/.env
+    environment:
+      DATABASE_URL: postgresql://erp_user:changeme@erp_db:5432/erp_suivi
+    volumes:
+      - ../miele_erp/app:/app
+    ports:
+      - "8000:8000"
+    networks:
+      - primehome_net
+      - odoo_net
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+
+  erp_frontend:
+    build:
+      context: ../miele_erp/frontend
+      dockerfile: Dockerfile
+    container_name: primehome_erp_frontend
+    restart: unless-stopped
+    depends_on:
+      - erp_api
+    volumes:
+      - ../miele_erp/frontend:/app
+      - /app/node_modules
+    networks:
+      - primehome_net
+
+  # ─── SAV ────────────────────────────────────────────────
+  sav_db:
+    image: postgres:16-alpine
+    container_name: primehome_sav_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: sav_user
+      POSTGRES_PASSWORD: sav_pass
+      POSTGRES_DB: miele_sav
+    volumes:
+      - sav_db_data:/var/lib/postgresql/data
+      - ../sav/miele-sav/docker/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - primehome_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sav_user -d miele_sav"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  sav_redis:
+    image: redis:7-alpine
+    container_name: primehome_sav_redis
+    restart: unless-stopped
+    networks:
+      - primehome_net
+
+  sav_backend:
+    build:
+      context: ../sav/miele-sav/backend
+      dockerfile: Dockerfile
+    container_name: primehome_sav_backend
+    restart: unless-stopped
+    depends_on:
+      sav_db:
+        condition: service_healthy
+      sav_redis:
+        condition: service_started
+    environment:
+      DATABASE_URL: postgresql://sav_user:sav_pass@sav_db:5432/miele_sav
+      REDIS_URL: redis://sav_redis:6379
+      SECRET_KEY: primehome_unified_jwt_secret_2026
+      SMTP_HOST: ${SMTP_HOST:-smtp.gmail.com}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-sav@primehome.ma}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      FRONTEND_URL: http://localhost/sav
+      UPLOAD_DIR: /app/uploads
+      PDF_OUTPUT_DIR: /app/pdfs
+      ENVIRONMENT: development
+      ODOO_URL: http://odoo18_app:8069
+      ODOO_DB: odoo
+      ODOO_USER: ${ODOO_USER:-yassir.skalli@gmail.com}
+      ODOO_PASSWORD: ${ODOO_PASSWORD:-erp_admin_2026}
+    volumes:
+      - ../sav/miele-sav/backend:/app
+      - sav_uploads:/app/uploads
+      - sav_pdfs:/app/pdfs
+    ports:
+      - "8002:8000"
+    networks:
+      - primehome_net
+      - odoo_net
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  sav_frontend:
+    build:
+      context: ../sav/miele-sav/frontend
+      dockerfile: Dockerfile
+    container_name: primehome_sav_frontend
+    restart: unless-stopped
+    depends_on:
+      - sav_backend
+    environment:
+      API_TARGET: http://sav_backend:8000
+    volumes:
+      - ../sav/miele-sav/frontend:/app
+      - /app/node_modules
+    networks:
+      - primehome_net
+
+  # ─── DEVIS ──────────────────────────────────────────────
+  devis_db:
+    image: postgres:16-alpine
+    container_name: primehome_devis_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: devis_user
+      POSTGRES_PASSWORD: devis_pass
+      POSTGRES_DB: devis_miele
+    volumes:
+      - devis_db_data:/var/lib/postgresql/data
+    networks:
+      - primehome_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U devis_user -d devis_miele"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  devis_backend:
+    build:
+      context: ../devis_miele/backend
+      dockerfile: Dockerfile
+    container_name: primehome_devis_backend
+    restart: unless-stopped
+    depends_on:
+      devis_db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://devis_user:devis_pass@devis_db:5432/devis_miele
+      JWT_SECRET_KEY: primehome_unified_jwt_secret_2026
+      ORDER_TRACKING_URL: http://erp_api:8000
+      DEBUG: "true"
+    volumes:
+      - ../devis_miele/backend:/app
+      - devis_pdfs:/app/pdfs
+    ports:
+      - "8001:8001"
+    networks:
+      - primehome_net
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload
+
+  devis_frontend:
+    build:
+      context: ../devis_miele/frontend
+      dockerfile: Dockerfile
+    container_name: primehome_devis_frontend
+    restart: unless-stopped
+    depends_on:
+      - devis_backend
+    environment:
+      API_TARGET: http://devis_backend:8001
+    volumes:
+      - ../devis_miele/frontend:/app
+      - /app/node_modules
+    networks:
+      - primehome_net
+
+networks:
+  primehome_net:
+    name: primehome_net
+    driver: bridge
+  odoo_net:
+    external: true
+    name: project_yassirodoo_default
+
+volumes:
+  erp_db_data:
+  sav_db_data:
+  sav_uploads:
+  sav_pdfs:
+  devis_db_data:
+  devis_pdfs:

@@ -1,0 +1,210 @@
+version: "3.9"
+
+# ============================================================
+# Prime Home — Stack production UNIFIÉE
+# Toutes les images sont tirées de ghcr.io
+#
+# Routes :
+#   https://erp.primehome.ma/          → Portail login
+#   https://erp.primehome.ma/commandes → Order Tracking (ERP)
+#   https://erp.primehome.ma/sav       → Service Après-Vente
+#   https://erp.primehome.ma/devis     → Générateur de Devis
+#
+# Prérequis :
+#   - docker login ghcr.io -u yassirskalli --password <TOKEN>
+#   - cp .env.example .env && nano .env
+#   - docker compose -f docker-compose.prod.yml up -d
+# ============================================================
+
+services:
+
+  # ─── NGINX Portail ──────────────────────────────────────────
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: primehome_nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./portal:/usr/share/nginx/html:ro
+    depends_on:
+      - erp_frontend
+      - sav_frontend
+      - devis_frontend
+    networks:
+      - primehome_net
+
+  # ─── ORDER TRACKING (ERP) ───────────────────────────────────
+  erp_db:
+    image: postgres:15-alpine
+    container_name: primehome_erp_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: erp_suivi
+      POSTGRES_USER: erp_user
+      POSTGRES_PASSWORD: ${ERP_DB_PASSWORD:?ERP_DB_PASSWORD requis}
+    volumes:
+      - erp_db_data:/var/lib/postgresql/data
+    networks:
+      - primehome_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U erp_user -d erp_suivi"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  erp_api:
+    image: ghcr.io/yassirskalli/primehome-erp-api:latest
+    container_name: primehome_erp_api
+    restart: unless-stopped
+    depends_on:
+      erp_db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://erp_user:${ERP_DB_PASSWORD}@erp_db:5432/erp_suivi
+      JWT_SECRET_KEY: ${ERP_JWT_SECRET:?ERP_JWT_SECRET requis}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-https://erp.primehome.ma}
+      ODOO_URL: ${ODOO_URL:?ODOO_URL requis}
+      ODOO_DB: ${ODOO_DB:-odoo}
+      ODOO_USER: ${ODOO_USER:?ODOO_USER requis}
+      ODOO_PASSWORD: ${ODOO_PASSWORD:?ODOO_PASSWORD requis}
+      DEBUG: "false"
+    volumes:
+      - erp_uploads:/app/uploads
+    networks:
+      - primehome_net
+
+  erp_frontend:
+    image: ghcr.io/yassirskalli/primehome-erp-frontend:latest
+    container_name: primehome_erp_frontend
+    restart: unless-stopped
+    depends_on:
+      - erp_api
+    networks:
+      - primehome_net
+
+  # ─── SAV ────────────────────────────────────────────────────
+  sav_db:
+    image: postgres:16-alpine
+    container_name: primehome_sav_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: sav_user
+      POSTGRES_PASSWORD: ${SAV_DB_PASSWORD:?SAV_DB_PASSWORD requis}
+      POSTGRES_DB: miele_sav
+    volumes:
+      - sav_db_data:/var/lib/postgresql/data
+    networks:
+      - primehome_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sav_user -d miele_sav"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  sav_redis:
+    image: redis:7-alpine
+    container_name: primehome_sav_redis
+    restart: unless-stopped
+    networks:
+      - primehome_net
+
+  sav_backend:
+    image: ghcr.io/yassirskalli/primehome-sav-backend:latest
+    container_name: primehome_sav_backend
+    restart: unless-stopped
+    depends_on:
+      sav_db:
+        condition: service_healthy
+      sav_redis:
+        condition: service_started
+    environment:
+      DATABASE_URL: postgresql://sav_user:${SAV_DB_PASSWORD}@sav_db:5432/miele_sav
+      REDIS_URL: redis://sav_redis:6379
+      SECRET_KEY: ${SAV_SECRET_KEY:?SAV_SECRET_KEY requis}
+      SMTP_HOST: ${SMTP_HOST:-smtp.gmail.com}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-sav@primehome.ma}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:?SMTP_PASSWORD requis}
+      FRONTEND_URL: https://erp.primehome.ma/sav
+      UPLOAD_DIR: /app/uploads
+      PDF_OUTPUT_DIR: /app/pdfs
+      ENVIRONMENT: production
+    volumes:
+      - sav_uploads:/app/uploads
+      - sav_pdfs:/app/pdfs
+    networks:
+      - primehome_net
+
+  sav_frontend:
+    image: ghcr.io/yassirskalli/primehome-sav-frontend:latest
+    container_name: primehome_sav_frontend
+    restart: unless-stopped
+    depends_on:
+      - sav_backend
+    networks:
+      - primehome_net
+
+  # ─── DEVIS ──────────────────────────────────────────────────
+  devis_db:
+    image: postgres:16-alpine
+    container_name: primehome_devis_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: devis_user
+      POSTGRES_PASSWORD: ${DEVIS_DB_PASSWORD:?DEVIS_DB_PASSWORD requis}
+      POSTGRES_DB: devis_miele
+    volumes:
+      - devis_db_data:/var/lib/postgresql/data
+    networks:
+      - primehome_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U devis_user -d devis_miele"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  devis_backend:
+    image: ghcr.io/yassirskalli/primehome-devis-backend:latest
+    container_name: primehome_devis_backend
+    restart: unless-stopped
+    depends_on:
+      devis_db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://devis_user:${DEVIS_DB_PASSWORD}@devis_db:5432/devis_miele
+      JWT_SECRET_KEY: ${DEVIS_JWT_SECRET:?DEVIS_JWT_SECRET requis}
+      ORDER_TRACKING_URL: http://erp_api:8000
+      ODOO_URL: ${ODOO_URL}
+      ODOO_DB: ${ODOO_DB:-odoo}
+      ODOO_USER: ${ODOO_USER}
+      ODOO_PASSWORD: ${ODOO_PASSWORD}
+      DEBUG: "false"
+    volumes:
+      - devis_pdfs:/app/pdfs
+    networks:
+      - primehome_net
+
+  devis_frontend:
+    image: ghcr.io/yassirskalli/primehome-devis-frontend:latest
+    container_name: primehome_devis_frontend
+    restart: unless-stopped
+    depends_on:
+      - devis_backend
+    networks:
+      - primehome_net
+
+networks:
+  primehome_net:
+    name: primehome_net
+    driver: bridge
+
+volumes:
+  erp_db_data:
+  erp_uploads:
+  sav_db_data:
+  sav_uploads:
+  sav_pdfs:
+  devis_db_data:
+  devis_pdfs:

@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Administration — Prime Home</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0f0f0f;
+      color: #e5e5e5;
+      min-height: 100vh;
+    }
+
+    /* ── Topbar ── */
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 32px;
+      height: 60px;
+      background: rgba(255,255,255,0.04);
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      backdrop-filter: blur(12px);
+    }
+    .topbar-left { display: flex; align-items: center; gap: 16px; }
+    .back-btn {
+      display: flex; align-items: center; gap-6px; gap: 6px;
+      color: rgba(255,255,255,0.5);
+      text-decoration: none;
+      font-size: 13px;
+      transition: color .2s;
+    }
+    .back-btn:hover { color: #fff; }
+    .back-btn svg { width: 14px; height: 14px; }
+    .topbar-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: #fff;
+      letter-spacing: .3px;
+    }
+    .topbar-badge {
+      font-size: 11px;
+      color: rgba(255,255,255,0.4);
+      border: 1px solid rgba(255,255,255,0.12);
+      padding: 2px 8px;
+      border-radius: 20px;
+    }
+    .user-chip {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 13px; color: rgba(255,255,255,0.5);
+    }
+    .avatar {
+      width: 30px; height: 30px;
+      background: #cc0000;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 700; color: #fff;
+    }
+
+    /* ── Content ── */
+    .content { max-width: 900px; margin: 0 auto; padding: 40px 24px; }
+
+    .page-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 28px;
+    }
+    .page-title { font-size: 22px; font-weight: 700; color: #fff; }
+    .page-subtitle { font-size: 13px; color: rgba(255,255,255,0.4); margin-top: 3px; }
+
+    .btn-add {
+      display: flex; align-items: center; gap: 6px;
+      background: #cc0000;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 9px 18px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background .2s;
+    }
+    .btn-add:hover { background: #e00000; }
+    .btn-add svg { width: 14px; height: 14px; }
+
+    /* ── Table ── */
+    .table-wrap {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    table { width: 100%; border-collapse: collapse; }
+    thead tr { border-bottom: 1px solid rgba(255,255,255,0.08); }
+    th {
+      text-align: left;
+      padding: 12px 18px;
+      font-size: 11px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.35);
+      text-transform: uppercase;
+      letter-spacing: .8px;
+    }
+    tbody tr {
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      transition: background .15s;
+    }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: rgba(255,255,255,0.03); }
+    td { padding: 14px 18px; font-size: 13px; color: rgba(255,255,255,0.85); vertical-align: middle; }
+
+    .user-name { font-weight: 600; color: #fff; }
+
+    /* ── Roles ── */
+    .roles { display: flex; flex-wrap: wrap; gap: 4px; }
+    .role-badge {
+      font-size: 10px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 20px;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+    }
+    .role-admin        { background: rgba(204,0,0,.25);     color: #ff6b6b; border: 1px solid rgba(204,0,0,.4); }
+    .role-commercial   { background: rgba(59,130,246,.2);   color: #93c5fd; border: 1px solid rgba(59,130,246,.35); }
+    .role-odoo_manager { background: rgba(139,92,246,.2);   color: #c4b5fd; border: 1px solid rgba(139,92,246,.35); }
+    .role-sav_manager  { background: rgba(249,115,22,.2);   color: #fdba74; border: 1px solid rgba(249,115,22,.35); }
+    .role-technicien   { background: rgba(234,179,8,.2);    color: #fde68a; border: 1px solid rgba(234,179,8,.35); }
+    .role-compta       { background: rgba(16,185,129,.2);   color: #6ee7b7; border: 1px solid rgba(16,185,129,.35); }
+
+    /* ── Status toggle ── */
+    .status-btn {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 20px;
+      border: none;
+      cursor: pointer;
+      transition: opacity .2s;
+    }
+    .status-btn:hover { opacity: .8; }
+    .status-active   { background: rgba(16,185,129,.2); color: #6ee7b7; border: 1px solid rgba(16,185,129,.3); }
+    .status-inactive { background: rgba(255,255,255,.08); color: rgba(255,255,255,.35); border: 1px solid rgba(255,255,255,.1); }
+
+    /* ── Actions ── */
+    .actions { display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
+    .icon-btn {
+      background: none; border: none; cursor: pointer;
+      color: rgba(255,255,255,0.3);
+      padding: 6px;
+      border-radius: 6px;
+      transition: color .2s, background .2s;
+      display: flex; align-items: center;
+    }
+    .icon-btn:hover { color: #fff; background: rgba(255,255,255,.08); }
+    .icon-btn.delete:hover { color: #ff6b6b; background: rgba(204,0,0,.15); }
+    .icon-btn svg { width: 15px; height: 15px; }
+
+    /* ── Modal ── */
+    .overlay {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.7);
+      backdrop-filter: blur(4px);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .overlay.open { display: flex; }
+    .modal {
+      background: #1a1a1a;
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 14px;
+      width: 100%;
+      max-width: 440px;
+      box-shadow: 0 24px 60px rgba(0,0,0,.6);
+    }
+    .modal-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 18px 22px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .modal-title { font-size: 15px; font-weight: 600; color: #fff; }
+    .modal-close {
+      background: none; border: none; cursor: pointer;
+      color: rgba(255,255,255,0.4);
+      display: flex; align-items: center;
+      border-radius: 6px; padding: 4px;
+      transition: color .2s, background .2s;
+    }
+    .modal-close:hover { color: #fff; background: rgba(255,255,255,.08); }
+    .modal-close svg { width: 16px; height: 16px; }
+    .modal-body { padding: 22px; display: flex; flex-direction: column; gap: 18px; }
+    .modal-footer {
+      display: flex; justify-content: flex-end; gap: 10px;
+      padding: 16px 22px;
+      border-top: 1px solid rgba(255,255,255,0.08);
+    }
+
+    /* ── Form fields ── */
+    .field { display: flex; flex-direction: column; gap: 6px; }
+    .field label { font-size: 11px; font-weight: 600; color: rgba(255,255,255,0.45); text-transform: uppercase; letter-spacing: .6px; }
+    .field input {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 8px;
+      padding: 10px 13px;
+      color: #fff;
+      font-size: 13px;
+      outline: none;
+      transition: border-color .2s;
+    }
+    .field input::placeholder { color: rgba(255,255,255,0.25); }
+    .field input:focus { border-color: rgba(204,0,0,0.6); }
+
+    /* ── Role checkboxes ── */
+    .roles-grid { display: flex; flex-wrap: wrap; gap: 6px; }
+    .role-check {
+      display: flex; align-items: center; gap: 6px;
+      padding: 6px 12px;
+      border-radius: 20px;
+      border: 1px solid rgba(255,255,255,0.12);
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 500;
+      color: rgba(255,255,255,0.45);
+      transition: all .15s;
+      user-select: none;
+    }
+    .role-check input { display: none; }
+    .role-check.checked {
+      border-color: #cc0000;
+      background: rgba(204,0,0,0.15);
+      color: #ff9999;
+    }
+    .role-check .check-icon { font-size: 10px; display: none; }
+    .role-check.checked .check-icon { display: inline; }
+
+    /* ── Buttons ── */
+    .btn-cancel {
+      background: none; border: 1px solid rgba(255,255,255,0.12);
+      color: rgba(255,255,255,0.5); border-radius: 8px;
+      padding: 8px 16px; font-size: 13px; cursor: pointer;
+      transition: all .2s;
+    }
+    .btn-cancel:hover { border-color: rgba(255,255,255,0.25); color: #fff; }
+    .btn-submit {
+      background: #cc0000; border: none; color: #fff;
+      border-radius: 8px; padding: 8px 20px;
+      font-size: 13px; font-weight: 600; cursor: pointer;
+      transition: background .2s;
+    }
+    .btn-submit:hover { background: #e00000; }
+    .btn-submit:disabled { opacity: .5; cursor: not-allowed; }
+
+    .error-msg { font-size: 12px; color: #ff6b6b; }
+
+    /* ── Empty / loading ── */
+    .empty { padding: 48px; text-align: center; color: rgba(255,255,255,0.25); font-size: 14px; }
+
+    /* ── Tabs ── */
+    .tabs { display: flex; gap: 4px; margin-bottom: 28px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 4px; width: fit-content; }
+    .tab-btn {
+      padding: 8px 20px; border-radius: 7px; border: none; cursor: pointer;
+      font-size: 13px; font-weight: 500; color: rgba(255,255,255,0.45);
+      background: none; transition: all .2s;
+    }
+    .tab-btn.active { background: rgba(255,255,255,0.1); color: #fff; font-weight: 600; }
+    .tab-btn:hover:not(.active) { color: rgba(255,255,255,0.7); }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* ── Filter pills ── */
+    .pills { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
+    .pill {
+      display: flex; align-items: center; gap: 8px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 10px;
+      padding: 10px 16px;
+      cursor: pointer;
+      transition: all .18s;
+      user-select: none;
+    }
+    .pill:hover { background: rgba(255,255,255,0.09); border-color: rgba(255,255,255,0.2); }
+    .pill.active { background: rgba(204,0,0,0.15); border-color: rgba(204,0,0,0.5); }
+    .pill-label { font-size: 12px; color: rgba(255,255,255,0.5); font-weight: 500; }
+    .pill.active .pill-label { color: #ff9999; }
+    .pill-count {
+      font-size: 14px; font-weight: 700; color: #fff;
+      background: rgba(255,255,255,0.08); border-radius: 6px;
+      padding: 1px 8px; min-width: 28px; text-align: center;
+    }
+    .pill.active .pill-count { background: rgba(204,0,0,0.3); color: #ffcccc; }
+
+    /* ── Logs extras ── */
+    .log-bar { display: flex; gap: 10px; margin-bottom: 14px; align-items: center; }
+    .filter-select {
+      background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 8px; color: #fff; font-size: 12px; padding: 6px 10px;
+      outline: none; cursor: pointer;
+    }
+    .filter-select option { background: #1a1a1a; }
+    .btn-refresh {
+      display: flex; align-items: center; gap: 6px;
+      background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12);
+      color: rgba(255,255,255,0.6); border-radius: 8px; padding: 6px 14px;
+      font-size: 12px; cursor: pointer; transition: all .2s; margin-left: auto;
+    }
+    .btn-refresh:hover { background: rgba(255,255,255,0.1); color: #fff; }
+    .btn-refresh svg { width: 13px; height: 13px; }
+
+    /* ── Sortable columns ── */
+    th.sortable { cursor: pointer; user-select: none; white-space: nowrap; }
+    th.sortable:hover { color: rgba(255,255,255,0.7); }
+    .sort-icon { display: inline-block; margin-left: 4px; opacity: 0.25; font-size: 10px; transition: opacity .15s; }
+    th.sortable.asc  .sort-icon,
+    th.sortable.desc .sort-icon { opacity: 1; color: #cc0000; }
+
+    .log-tag {
+      display: inline-block; font-size: 10px; font-weight: 700;
+      padding: 2px 8px; border-radius: 20px; letter-spacing: .5px; text-transform: uppercase;
+    }
+    .tag-auth-erp    { background: rgba(99,102,241,.25); color: #a5b4fc; border: 1px solid rgba(99,102,241,.4); }
+    .tag-auth-sav    { background: rgba(249,115,22,.2);  color: #fdba74; border: 1px solid rgba(249,115,22,.4); }
+    .tag-devis       { background: rgba(59,130,246,.2);  color: #93c5fd; border: 1px solid rgba(59,130,246,.4); }
+    .tag-sav         { background: rgba(139,92,246,.2);  color: #c4b5fd; border: 1px solid rgba(139,92,246,.4); }
+
+    .action-tag {
+      display: inline-block; font-size: 10px; font-weight: 700;
+      padding: 2px 8px; border-radius: 20px; letter-spacing: .4px;
+    }
+    .action-ok     { background: rgba(16,185,129,.15); color: #6ee7b7; border: 1px solid rgba(16,185,129,.3); }
+    .action-fail   { background: rgba(204,0,0,.2);     color: #ff6b6b;  border: 1px solid rgba(204,0,0,.4); }
+    .action-create { background: rgba(59,130,246,.15); color: #93c5fd; border: 1px solid rgba(59,130,246,.3); }
+    .action-delete { background: rgba(249,115,22,.15); color: #fdba74; border: 1px solid rgba(249,115,22,.3); }
+    .action-other  { background: rgba(255,255,255,.06); color: rgba(255,255,255,.5); border: 1px solid rgba(255,255,255,.1); }
+
+    /* ── Toast ── */
+    .toast {
+      position: fixed; bottom: 24px; right: 24px;
+      background: #1e1e1e;
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 10px;
+      padding: 12px 18px;
+      font-size: 13px;
+      color: #fff;
+      box-shadow: 0 8px 24px rgba(0,0,0,.4);
+      z-index: 9999;
+      transform: translateY(80px);
+      opacity: 0;
+      transition: all .3s;
+    }
+    .toast.show { transform: translateY(0); opacity: 1; }
+    .toast.success { border-left: 3px solid #6ee7b7; }
+    .toast.error   { border-left: 3px solid #ff6b6b; }
+  </style>
+</head>
+<body>
+
+<!-- Topbar -->
+<div class="topbar">
+  <div class="topbar-left">
+    <a href="/" class="back-btn">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M10 12L6 8l4-4"/>
+      </svg>
+      Portail
+    </a>
+    <span style="color:rgba(255,255,255,0.15)">|</span>
+    <span class="topbar-title">Administration</span>
+    <span class="topbar-badge">Utilisateurs & Rôles</span>
+  </div>
+  <div class="user-chip">
+    <div class="avatar" id="top-avatar">A</div>
+    <span id="top-username">admin</span>
+  </div>
+</div>
+
+<!-- Content -->
+<div class="content">
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('users')">Utilisateurs</button>
+    <button class="tab-btn" onclick="switchTab('logs')">Journal d'audit</button>
+  </div>
+
+  <!-- Tab: Utilisateurs -->
+  <div class="tab-panel active" id="tab-users">
+    <div class="page-header">
+      <div>
+        <div class="page-title">Gestion des utilisateurs</div>
+        <div class="page-subtitle" id="user-count">Chargement…</div>
+      </div>
+      <button class="btn-add" onclick="openCreate()">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M8 3v10M3 8h10"/>
+        </svg>
+        Ajouter un utilisateur
+      </button>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Identifiant</th>
+            <th>Rôles</th>
+            <th style="text-align:center">Statut</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="users-body">
+          <tr><td colspan="4" class="empty">Chargement…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Tab: Journal d'audit -->
+  <div class="tab-panel" id="tab-logs">
+    <div class="page-header">
+      <div>
+        <div class="page-title">Journal d'audit</div>
+        <div class="page-subtitle" id="log-count">Chargement…</div>
+      </div>
+    </div>
+
+    <div class="log-filters">
+      <select class="log-filter-select" id="filter-source" onchange="applyFilters()">
+        <option value="">Tous les modules</option>
+        <option value="erp-auth">ERP — Auth</option>
+        <option value="sav-auth">SAV — Auth</option>
+        <option value="sav">SAV — Actions</option>
+        <option value="devis">Devis — Actions</option>
+      </select>
+      <select class="log-filter-select" id="filter-action" onchange="applyFilters()">
+        <option value="">Toutes les actions</option>
+        <option value="LOGIN_SUCCES">Connexion réussie</option>
+        <option value="LOGIN_ECHEC">Connexion échouée</option>
+        <option value="CREATION">Création</option>
+        <option value="SUPPRESSION">Suppression</option>
+      </select>
+      <button class="btn-refresh" onclick="loadLogs()">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M13.5 8A5.5 5.5 0 1 1 8 2.5"/>
+          <path d="M13.5 2.5v3h-3"/>
+        </svg>
+        Actualiser
+      </button>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Date / Heure</th>
+            <th>Utilisateur</th>
+            <th>Module</th>
+            <th>Action</th>
+            <th>Référence / Détail</th>
+          </tr>
+        </thead>
+        <tbody id="logs-body">
+          <tr><td colspan="5" class="empty">Chargement…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<!-- Modal Créer / Modifier -->
+<div class="overlay" id="modal-overlay">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="modal-title">Nouvel utilisateur</span>
+      <button class="modal-close" onclick="closeModal()">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M3 3l10 10M13 3L3 13"/>
+        </svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="field" id="field-username">
+        <label>Identifiant</label>
+        <input type="text" id="input-username" placeholder="ex: commercial3" autocomplete="off" />
+      </div>
+      <div class="field">
+        <label id="pwd-label">Mot de passe</label>
+        <input type="password" id="input-password" placeholder="••••••••" autocomplete="new-password" />
+      </div>
+      <div class="field">
+        <label>Rôles</label>
+        <div class="roles-grid" id="roles-grid"></div>
+      </div>
+      <div class="error-msg" id="modal-error" style="display:none"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal()">Annuler</button>
+      <button class="btn-submit" id="btn-submit" onclick="submitModal()">Créer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+  const API = '/commandes/api';
+  const ROLES = [
+    { value: 'admin',        label: 'Admin' },
+    { value: 'commercial',   label: 'Commercial' },
+    { value: 'odoo_manager', label: 'Responsable Odoo' },
+    { value: 'sav_manager',  label: 'SAV Manager' },
+    { value: 'technicien',   label: 'Technicien' },
+    { value: 'compta',       label: 'Comptabilité' },
+  ];
+
+  // ── Auth ──────────────────────────────────────────────────────────────────
+  const token = localStorage.getItem('erp_token');
+  if (!token) { window.location.href = '/'; }
+
+  function parseJwt(t) {
+    try { return JSON.parse(atob(t.split('.')[1].replace(/-/g,'+').replace(/_/g,'/'))); }
+    catch { return null; }
+  }
+  const payload = parseJwt(token);
+  const username = payload?.sub || localStorage.getItem('portal_user') || 'admin';
+  document.getElementById('top-avatar').textContent = username[0].toUpperCase();
+  document.getElementById('top-username').textContent = username;
+
+  // Check admin role
+  if (!payload?.roles?.includes('admin')) {
+    window.location.href = '/';
+  }
+
+  // ── HTTP ──────────────────────────────────────────────────────────────────
+  async function http(method, path, body) {
+    const res = await fetch(API + path, {
+      method,
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    if (res.status === 401) { window.location.href = '/'; return; }
+    if (res.status === 204) return null;
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Erreur serveur');
+    return data;
+  }
+
+  // ── Toast ─────────────────────────────────────────────────────────────────
+  function toast(msg, type = 'success') {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.className = `toast ${type} show`;
+    clearTimeout(el._t);
+    el._t = setTimeout(() => el.classList.remove('show'), 3000);
+  }
+
+  // ── Render ────────────────────────────────────────────────────────────────
+  let users = [];
+
+  function roleBadge(role) {
+    const meta = ROLES.find(r => r.value === role);
+    return `<span class="role-badge role-${role}">${meta?.label ?? role}</span>`;
+  }
+
+  function renderUsers() {
+    document.getElementById('user-count').textContent =
+      `${users.length} utilisateur${users.length > 1 ? 's' : ''} enregistré${users.length > 1 ? 's' : ''}`;
+
+    const tbody = document.getElementById('users-body');
+    if (users.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="4" class="empty">Aucun utilisateur</td></tr>';
+      return;
+    }
+    tbody.innerHTML = users.map(u => `
+      <tr>
+        <td><span class="user-name">${u.username}</span></td>
+        <td><div class="roles">${u.roles.map(roleBadge).join('') || '<span style="color:rgba(255,255,255,.25);font-size:12px">Aucun rôle</span>'}</div></td>
+        <td style="text-align:center">
+          <button class="status-btn ${u.is_active ? 'status-active' : 'status-inactive'}"
+            onclick="toggleActive(${u.id}, ${u.is_active})">
+            ${u.is_active ? 'Actif' : 'Inactif'}
+          </button>
+        </td>
+        <td>
+          <div class="actions">
+            <button class="icon-btn" onclick="openEdit(${u.id})" title="Modifier">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M11.5 2.5l2 2-8 8H3.5v-2l8-8z"/>
+              </svg>
+            </button>
+            ${u.username !== username ? `
+            <button class="icon-btn delete" onclick="deleteUser(${u.id}, '${u.username}')" title="Supprimer">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M3 4h10M6 4V2.5h4V4M5 4l.5 9h5l.5-9"/>
+              </svg>
+            </button>` : ''}
+          </div>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  async function loadUsers() {
+    try {
+      users = await http('GET', '/users');
+      renderUsers();
+    } catch (e) { toast('Erreur chargement : ' + e.message, 'error'); }
+  }
+
+  // ── Toggle active ─────────────────────────────────────────────────────────
+  async function toggleActive(id, current) {
+    try {
+      const u = await http('PATCH', `/users/${id}`, { is_active: !current });
+      users = users.map(x => x.id === id ? u : x);
+      renderUsers();
+      toast(u.is_active ? 'Compte activé' : 'Compte désactivé');
+    } catch (e) { toast(e.message, 'error'); }
+  }
+
+  // ── Delete ────────────────────────────────────────────────────────────────
+  async function deleteUser(id, name) {
+    if (!confirm(`Supprimer l'utilisateur "${name}" ?`)) return;
+    try {
+      await http('DELETE', `/users/${id}`);
+      users = users.filter(u => u.id !== id);
+      renderUsers();
+      toast(`Utilisateur "${name}" supprimé`);
+    } catch (e) { toast(e.message, 'error'); }
+  }
+
+  // ── Modal ─────────────────────────────────────────────────────────────────
+  let editingId = null;
+
+  function buildRolesGrid(selected = []) {
+    document.getElementById('roles-grid').innerHTML = ROLES.map(r => `
+      <label class="role-check ${selected.includes(r.value) ? 'checked' : ''}" data-role="${r.value}">
+        <input type="checkbox" value="${r.value}" ${selected.includes(r.value) ? 'checked' : ''} />
+        <span class="check-icon">✓</span>
+        ${r.label}
+      </label>
+    `).join('');
+
+    document.querySelectorAll('.role-check').forEach(lbl => {
+      lbl.addEventListener('click', () => {
+        const cb = lbl.querySelector('input');
+        cb.checked = !cb.checked;
+        lbl.classList.toggle('checked', cb.checked);
+      });
+    });
+  }
+
+  function getSelectedRoles() {
+    return [...document.querySelectorAll('.role-check.checked')].map(l => l.dataset.role);
+  }
+
+  function openCreate() {
+    editingId = null;
+    document.getElementById('modal-title').textContent = 'Nouvel utilisateur';
+    document.getElementById('btn-submit').textContent = 'Créer';
+    document.getElementById('input-username').value = '';
+    document.getElementById('input-password').value = '';
+    document.getElementById('field-username').style.display = '';
+    document.getElementById('pwd-label').textContent = 'Mot de passe';
+    document.getElementById('modal-error').style.display = 'none';
+    buildRolesGrid([]);
+    document.getElementById('modal-overlay').classList.add('open');
+    document.getElementById('input-username').focus();
+  }
+
+  function openEdit(id) {
+    const u = users.find(x => x.id === id);
+    if (!u) return;
+    editingId = id;
+    document.getElementById('modal-title').textContent = `Modifier — ${u.username}`;
+    document.getElementById('btn-submit').textContent = 'Enregistrer';
+    document.getElementById('input-username').value = u.username;
+    document.getElementById('field-username').style.display = '';
+    document.getElementById('input-password').value = '';
+    document.getElementById('pwd-label').textContent = 'Nouveau mot de passe (laisser vide pour ne pas changer)';
+    document.getElementById('modal-error').style.display = 'none';
+    buildRolesGrid(u.roles);
+    document.getElementById('modal-overlay').classList.add('open');
+  }
+
+  function closeModal() {
+    document.getElementById('modal-overlay').classList.remove('open');
+  }
+
+  async function submitModal() {
+    const btn = document.getElementById('btn-submit');
+    const errEl = document.getElementById('modal-error');
+    errEl.style.display = 'none';
+
+    const roles = getSelectedRoles();
+    if (roles.length === 0) {
+      errEl.textContent = 'Sélectionnez au moins un rôle.';
+      errEl.style.display = 'block';
+      return;
+    }
+
+    btn.disabled = true;
+    try {
+      if (editingId === null) {
+        // Create
+        const uname = document.getElementById('input-username').value.trim();
+        const pwd   = document.getElementById('input-password').value;
+        if (!uname || !pwd) {
+          errEl.textContent = 'Identifiant et mot de passe requis.';
+          errEl.style.display = 'block';
+          btn.disabled = false;
+          return;
+        }
+        const u = await http('POST', '/users', { username: uname, password: pwd, roles });
+        users.push(u);
+        toast(`Utilisateur "${u.username}" créé`);
+      } else {
+        // Update
+        const body = { roles };
+        const pwd = document.getElementById('input-password').value;
+        if (pwd) body.password = pwd;
+        const newUname = document.getElementById('input-username').value.trim();
+        if (newUname) body.username = newUname;
+        const u = await http('PATCH', `/users/${editingId}`, body);
+        users = users.map(x => x.id === editingId ? u : x);
+        toast(`Utilisateur "${u.username}" mis à jour`);
+      }
+      renderUsers();
+      closeModal();
+    } catch (e) {
+      errEl.textContent = e.message;
+      errEl.style.display = 'block';
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  // Close modal on overlay click
+  document.getElementById('modal-overlay').addEventListener('click', function(e) {
+    if (e.target === this) closeModal();
+  });
+
+  // ── Tabs ──────────────────────────────────────────────────────────────────
+  function switchTab(name) {
+    document.querySelectorAll('.tab-btn').forEach((b, i) => {
+      b.classList.toggle('active', (i === 0 ? 'users' : 'logs') === name);
+    });
+    document.getElementById('tab-users').classList.toggle('active', name === 'users');
+    document.getElementById('tab-logs').classList.toggle('active', name === 'logs');
+    if (name === 'logs' && allLogs.length === 0) loadLogs();
+  }
+
+  // ── Logs ──────────────────────────────────────────────────────────────────
+  let allLogs = [];
+
+  function fmtDate(iso) {
+    const d = new Date(iso);
+    return d.toLocaleDateString('fr-FR') + ' ' + d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  }
+
+  function sourceTag(source) {
+    const map = {
+      'erp-auth': ['ERP • Auth',    'tag-auth-erp'],
+      'sav-auth': ['SAV • Auth',    'tag-auth-sav'],
+      'sav':      ['SAV',           'tag-sav'],
+      'devis':    ['Devis',         'tag-devis'],
+    };
+    const [label, cls] = map[source] || ['—', 'action-other'];
+    return `<span class="log-tag ${cls}">${label}</span>`;
+  }
+
+  function actionTag(action) {
+    let cls = 'action-other';
+    if (action === 'LOGIN_SUCCES')             cls = 'action-ok';
+    else if (action === 'LOGIN_ECHEC')         cls = 'action-fail';
+    else if (action.startsWith('CREATION'))    cls = 'action-create';
+    else if (action.startsWith('SUPPRESSION')) cls = 'action-delete';
+    const labels = {
+      LOGIN_SUCCES:        'Connexion',
+      LOGIN_ECHEC:         'Échec connexion',
+      CREATION_DEVIS:      'Création devis',
+      SUPPRESSION_DEVIS:   'Suppression devis',
+      CREATION_FACTURE:    'Création facture',
+      SUPPRESSION_FACTURE: 'Suppression facture',
+    };
+    return `<span class="action-tag ${cls}">${labels[action] || action}</span>`;
+  }
+
+  function applyFilters() {
+    const srcF    = document.getElementById('filter-source').value;
+    const actF    = document.getElementById('filter-action').value;
+
+    let filtered = allLogs.filter(l => {
+      if (srcF && l._source !== srcF) return false;
+      if (actF && !l.action.includes(actF)) return false;
+      return true;
+    });
+
+    document.getElementById('log-count').textContent =
+      `${filtered.length} entrée${filtered.length > 1 ? 's' : ''} affichée${filtered.length > 1 ? 's' : ''}`;
+
+    const tbody = document.getElementById('logs-body');
+    if (filtered.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" class="empty">Aucun log</td></tr>';
+      return;
+    }
+    tbody.innerHTML = filtered.map(l => `
+      <tr>
+        <td style="color:rgba(255,255,255,.45);font-size:12px;white-space:nowrap">${fmtDate(l.horodatage)}</td>
+        <td style="font-weight:600">${l.utilisateur}</td>
+        <td>${sourceTag(l._source)}</td>
+        <td>${actionTag(l.action)}</td>
+        <td style="font-size:12px;color:rgba(255,255,255,.5);max-width:320px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"
+            title="${(l.reference || '') + (l.detail ? ' — ' + l.detail : '')}">
+          ${l.reference ? `<span style="color:rgba(255,255,255,.75)">${l.reference}</span>` : ''}
+          ${l.detail ? `<span style="color:rgba(255,255,255,.35)"> — ${l.detail}</span>` : ''}
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  async function fetchLogs(url, source) {
+    try {
+      const res = await fetch(url, { headers: { 'Authorization': 'Bearer ' + token } });
+      if (!res.ok) return [];
+      const data = await res.json();
+      return data.map(l => ({ ...l, _source: source }));
+    } catch { return []; }
+  }
+
+  async function loadLogs() {
+    document.getElementById('logs-body').innerHTML =
+      '<tr><td colspan="5" class="empty">Chargement…</td></tr>';
+    document.getElementById('log-count').textContent = 'Chargement…';
+
+    const [erpLogs, savLogs, devisLogs] = await Promise.all([
+      fetchLogs('/commandes/api/auth/logs?limit=200', 'erp-auth'),
+      fetchLogs('/sav/api/logs?limit=200', null),
+      fetchLogs('/devis/api/logs?limit=200', null),
+    ]);
+
+    // SAV logs : séparer AUTH des actions SAV
+    const savAll = savLogs.map(l => ({ ...l, _source: l.module === 'AUTH' ? 'sav-auth' : 'sav' }));
+    const devisAll = devisLogs.map(l => ({ ...l, _source: 'devis' }));
+
+    allLogs = [...erpLogs, ...savAll, ...devisAll]
+      .sort((a, b) => new Date(b.horodatage) - new Date(a.horodatage));
+
+    applyFilters();
+  }
+
+  // ── Init ──────────────────────────────────────────────────────────────────
+  loadUsers();
+</script>
+</body>
+</html>
