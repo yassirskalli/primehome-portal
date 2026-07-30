@@ -75,7 +75,7 @@ services:
       DATABASE_URL: postgresql://erp_user:${ERP_DB_PASSWORD}@erp_db:5432/erp_suivi
       JWT_SECRET_KEY: ${ERP_JWT_SECRET:?ERP_JWT_SECRET requis}
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-https://erp.miele.co.ma}
-      ODOO_URL: ${ODOO_URL:?ODOO_URL requis}
+      ODOO_URL: http://odoo:8069
       ODOO_DB: ${ODOO_DB:-odoo}
       ODOO_USER: ${ODOO_USER:?ODOO_USER requis}
       ODOO_PASSWORD: ${ODOO_PASSWORD:?ODOO_PASSWORD requis}
@@ -84,6 +84,7 @@ services:
       - erp_uploads:/app/uploads
     networks:
       - primehome_net
+      - odoo_net
 
   erp_frontend:
     image: ghcr.io/yassirskalli/primehome-erp-frontend:latest
@@ -186,7 +187,7 @@ services:
       DATABASE_URL: postgresql://devis_user:${DEVIS_DB_PASSWORD}@devis_db:5432/devis_miele
       JWT_SECRET_KEY: ${DEVIS_JWT_SECRET:?DEVIS_JWT_SECRET requis}
       ORDER_TRACKING_URL: http://erp_api:8000
-      ODOO_URL: ${ODOO_URL}
+      ODOO_URL: http://odoo:8069
       ODOO_DB: ${ODOO_DB:-odoo}
       ODOO_USER: ${ODOO_USER}
       ODOO_PASSWORD: ${ODOO_PASSWORD}
@@ -195,6 +196,7 @@ services:
       - devis_pdfs:/app/pdfs
     networks:
       - primehome_net
+      - odoo_net
 
   devis_frontend:
     image: ghcr.io/yassirskalli/primehome-devis-frontend:latest
@@ -212,6 +214,9 @@ networks:
   nginx_proxy_net:
     external: true
     name: nginx-proxy_nginx-proxy
+  odoo_net:
+    external: true
+    name: odoo-prod-new_odoo-network
 
 volumes:
   erp_db_data:
