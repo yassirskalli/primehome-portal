@@ -457,6 +457,8 @@
       localStorage.setItem('devis_token',  token);
       localStorage.setItem('devis_user',   username);
       localStorage.setItem('access_token', token);   // SAV
+      localStorage.setItem('compta_token', token);
+      localStorage.setItem('compta_user',  username);
 
       showDashboard(username, roles);
     } catch {
@@ -517,7 +519,8 @@
     ['portal_token','portal_roles','portal_user',
      'erp_token','erp_user',
      'devis_token','devis_user',
-     'access_token'].forEach(k => localStorage.removeItem(k));
+     'access_token',
+     'compta_token','compta_user'].forEach(k => localStorage.removeItem(k));
     document.getElementById('page-login').style.display = 'flex';
     document.getElementById('page-dashboard').style.display = 'none';
     document.getElementById('user-bar').style.display = 'none';
