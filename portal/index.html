@@ -219,10 +219,26 @@
       display: flex; align-items: center; justify-content: center;
       font-size: 26px;
     }
-    .icon-red   { background: rgba(204,0,0,0.18); }
-    .icon-blue  { background: rgba(59,130,246,0.18); }
-    .icon-green { background: rgba(16,185,129,0.18); }
-    .icon-gray  { background: rgba(156,163,175,0.25); }
+    .icon-red    { background: rgba(204,0,0,0.18); }
+    .icon-blue   { background: rgba(59,130,246,0.18); }
+    .icon-green  { background: rgba(16,185,129,0.18); }
+    .icon-gray   { background: rgba(156,163,175,0.25); }
+    .icon-yellow { background: rgba(234,179,8,0.18); }
+
+    .badge-dev {
+      display: inline-block;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: #fbbf24;
+      background: rgba(234,179,8,0.15);
+      border: 1px solid rgba(234,179,8,0.35);
+      border-radius: 4px;
+      padding: 2px 7px;
+      margin-left: 8px;
+      vertical-align: middle;
+    }
 
     .module-title {
       font-size: 17px;
@@ -387,6 +403,15 @@
       href: '/admin',
       roles: ['admin'],
     },
+    compta: {
+      title: 'Comptabilité',
+      desc: 'Journal des ventes, balance clients, TVA, fournisseurs et CPC.',
+      icon: '📊',
+      iconClass: 'icon-yellow',
+      href: '/compta',
+      roles: ['admin', 'compta'],
+      dev: true,
+    },
   };
 
   function getToken() { return localStorage.getItem('portal_token'); }
@@ -476,7 +501,7 @@
       card.innerHTML = `
         <div class="module-icon ${mod.iconClass}">${mod.icon}</div>
         <div>
-          <div class="module-title">${mod.title}</div>
+          <div class="module-title">${mod.title}${mod.dev ? '<span class="badge-dev">Dev</span>' : ''}</div>
           <div class="module-desc">${mod.desc}</div>
         </div>
         <span class="module-cta">Accéder</span>

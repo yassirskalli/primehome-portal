@@ -41,6 +41,7 @@ services:
       - erp_frontend
       - sav_frontend
       - devis_frontend
+      - compta_frontend
     networks:
       - primehome_net
       - nginx_proxy_net
@@ -218,6 +219,51 @@ services:
     networks:
       - primehome_net
 
+  # ─── COMPTABILITÉ ───────────────────────────────────────────
+  compta_db:
+    image: postgres:16-alpine
+    container_name: primehome_compta_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: compta_user
+      POSTGRES_PASSWORD: ${COMPTA_DB_PASSWORD:?COMPTA_DB_PASSWORD requis}
+      POSTGRES_DB: compta_db
+    volumes:
+      - compta_db_data:/var/lib/postgresql/data
+    networks:
+      - primehome_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U compta_user -d compta_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  compta_backend:
+    image: ghcr.io/yassirskalli/primehome-compta-backend:latest
+    container_name: primehome_compta_backend
+    restart: unless-stopped
+    depends_on:
+      compta_db:
+        condition: service_healthy
+      erp_db:
+        condition: service_healthy
+    environment:
+      COMPTA_DATABASE_URL: postgresql://compta_user:${COMPTA_DB_PASSWORD}@compta_db:5432/compta_db
+      ERP_DATABASE_URL: postgresql://erp_user:${ERP_DB_PASSWORD}@erp_db:5432/erp_suivi
+      JWT_SECRET: ${ERP_JWT_SECRET:?ERP_JWT_SECRET requis}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-https://erp.miele.co.ma}
+    networks:
+      - primehome_net
+
+  compta_frontend:
+    image: ghcr.io/yassirskalli/primehome-compta-frontend:latest
+    container_name: primehome_compta_frontend
+    restart: unless-stopped
+    depends_on:
+      - compta_backend
+    networks:
+      - primehome_net
+
 networks:
   primehome_net:
     name: primehome_net
@@ -237,3 +283,4 @@ volumes:
   sav_pdfs:
   devis_db_data:
   devis_pdfs:
+  compta_db_data:
