@@ -24,6 +24,7 @@ services:
       - erp_frontend
       - sav_frontend
       - devis_frontend
+      - compta_frontend
     networks:
       - primehome_net
 
@@ -69,16 +70,16 @@ services:
     command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 
   erp_frontend:
-    build:
-      context: ../miele_erp/frontend
-      dockerfile: Dockerfile
+    image: node:20-alpine
     container_name: primehome_erp_frontend
     restart: unless-stopped
+    working_dir: /app
+    command: sh -c "npm install --prefer-offline && npm run dev"
     depends_on:
       - erp_api
     volumes:
       - ../miele_erp/frontend:/app
-      - /app/node_modules
+      - erp_node_modules:/app/node_modules
     networks:
       - primehome_net
 
@@ -196,6 +197,10 @@ services:
       JWT_SECRET_KEY: primehome_unified_jwt_secret_2026
       ORDER_TRACKING_URL: http://erp_api:8000
       DEBUG: "true"
+      ODOO_URL: http://odoo18_app:8069
+      ODOO_DB: odoo
+      ODOO_USER: ${ODOO_USER:-yassir.skalli@gmail.com}
+      ODOO_PASSWORD: ${ODOO_PASSWORD:-erp_admin_2026}
     volumes:
       - ../devis_miele/backend:/app
       - devis_pdfs:/app/pdfs
@@ -203,6 +208,7 @@ services:
       - "8001:8001"
     networks:
       - primehome_net
+      - odoo_net
     command: uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload
 
   devis_frontend:
@@ -221,6 +227,63 @@ services:
     networks:
       - primehome_net
 
+  # ─── COMPTABILITÉ ───────────────────────────────────────
+  compta_db:
+    image: postgres:16-alpine
+    container_name: primehome_compta_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: compta_user
+      POSTGRES_PASSWORD: compta_pass
+      POSTGRES_DB: compta_db
+    volumes:
+      - compta_db_data:/var/lib/postgresql/data
+    networks:
+      - primehome_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U compta_user -d compta_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  compta_backend:
+    build:
+      context: ../compta_miele/backend
+      dockerfile: Dockerfile
+    container_name: primehome_compta_backend
+    restart: unless-stopped
+    depends_on:
+      compta_db:
+        condition: service_healthy
+      erp_db:
+        condition: service_healthy
+    environment:
+      COMPTA_DATABASE_URL: postgresql://compta_user:compta_pass@compta_db:5432/compta_db
+      ERP_DATABASE_URL: postgresql://erp_user:changeme@erp_db:5432/erp_suivi
+      JWT_SECRET: primehome_unified_jwt_secret_2026
+      ALLOWED_ORIGINS: http://localhost
+    volumes:
+      - ../compta_miele/backend/app:/app/app
+    ports:
+      - "8003:8002"
+    networks:
+      - primehome_net
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8002 --reload
+
+  compta_frontend:
+    image: node:20-alpine
+    container_name: primehome_compta_frontend
+    restart: unless-stopped
+    working_dir: /app
+    command: sh -c "npm install --prefer-offline && npm run dev"
+    depends_on:
+      - compta_backend
+    volumes:
+      - ../compta_miele/frontend:/app
+      - compta_node_modules:/app/node_modules
+    networks:
+      - primehome_net
+
 networks:
   primehome_net:
     name: primehome_net
@@ -231,8 +294,11 @@ networks:
 
 volumes:
   erp_db_data:
+  erp_node_modules:
+  compta_node_modules:
   sav_db_data:
   sav_uploads:
   sav_pdfs:
   devis_db_data:
   devis_pdfs:
+  compta_db_data:
