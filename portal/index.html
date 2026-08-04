@@ -412,6 +412,14 @@
       roles: ['admin', 'compta'],
       dev: true,
     },
+    stock: {
+      title: 'Stock',
+      desc: 'Consultation du stock en temps réel, réservations clients et suivi des commandes Miele.',
+      icon: '🏪',
+      iconClass: 'icon-blue',
+      href: '/stock',
+      roles: ['admin', 'commercial', 'odoo_manager', 'sav'],
+    },
   };
 
   function getToken() { return localStorage.getItem('portal_token'); }
@@ -452,13 +460,7 @@
       localStorage.setItem('portal_token', token);
       localStorage.setItem('portal_roles', JSON.stringify(roles));
       localStorage.setItem('portal_user',  username);
-      localStorage.setItem('erp_token',    token);
-      localStorage.setItem('erp_user',     username);
-      localStorage.setItem('devis_token',  token);
-      localStorage.setItem('devis_user',   username);
-      localStorage.setItem('access_token', token);   // SAV
-      localStorage.setItem('compta_token', token);
-      localStorage.setItem('compta_user',  username);
+      syncTokens(token);
 
       showDashboard(username, roles);
     } catch {
@@ -520,13 +522,27 @@
      'erp_token','erp_user',
      'devis_token','devis_user',
      'access_token',
-     'compta_token','compta_user'].forEach(k => localStorage.removeItem(k));
+     'compta_token','compta_user',
+     'stock_token'].forEach(k => localStorage.removeItem(k));
     document.getElementById('page-login').style.display = 'flex';
     document.getElementById('page-dashboard').style.display = 'none';
     document.getElementById('user-bar').style.display = 'none';
     document.getElementById('miele-badge').style.display = 'block';
     document.getElementById('username').value = '';
     document.getElementById('password').value = '';
+  }
+
+  // Synchronise tous les tokens depuis portal_token (au cas où un module a été ajouté après login)
+  function syncTokens(token) {
+    const username = getUsername();
+    localStorage.setItem('erp_token',    token);
+    localStorage.setItem('erp_user',     username);
+    localStorage.setItem('devis_token',  token);
+    localStorage.setItem('devis_user',   username);
+    localStorage.setItem('access_token', token);
+    localStorage.setItem('compta_token', token);
+    localStorage.setItem('compta_user',  username);
+    localStorage.setItem('stock_token',  token);
   }
 
   // Auto-login si token valide
@@ -538,6 +554,7 @@
       logout();
       return;
     }
+    syncTokens(token);
     showDashboard(getUsername(), getRoles());
   })();
 </script>

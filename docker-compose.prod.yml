@@ -42,6 +42,7 @@ services:
       - sav_frontend
       - devis_frontend
       - compta_frontend
+      - stock_frontend
     networks:
       - primehome_net
       - nginx_proxy_net
@@ -264,6 +265,52 @@ services:
     networks:
       - primehome_net
 
+  # ─── STOCK ──────────────────────────────────────────────────
+  stock_db:
+    image: postgres:16-alpine
+    container_name: primehome_stock_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: stock_user
+      POSTGRES_PASSWORD: ${STOCK_DB_PASSWORD:?STOCK_DB_PASSWORD requis}
+      POSTGRES_DB: stock_miele
+    volumes:
+      - stock_db_data:/var/lib/postgresql/data
+    networks:
+      - primehome_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U stock_user -d stock_miele"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  stock_backend:
+    image: ghcr.io/yassirskalli/primehome-stock-backend:latest
+    container_name: primehome_stock_backend
+    restart: unless-stopped
+    depends_on:
+      stock_db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://stock_user:${STOCK_DB_PASSWORD}@stock_db:5432/stock_miele
+      JWT_SECRET: ${ERP_JWT_SECRET:?ERP_JWT_SECRET requis}
+      ODOO_URL: http://odoo:8069
+      ODOO_DB: ${ODOO_DB:-odoo}
+      ODOO_USER: ${ODOO_USER:?ODOO_USER requis}
+      ODOO_PASSWORD: ${ODOO_PASSWORD:?ODOO_PASSWORD requis}
+    networks:
+      - primehome_net
+      - odoo_net
+
+  stock_frontend:
+    image: ghcr.io/yassirskalli/primehome-stock-frontend:latest
+    container_name: primehome_stock_frontend
+    restart: unless-stopped
+    depends_on:
+      - stock_backend
+    networks:
+      - primehome_net
+
 networks:
   primehome_net:
     name: primehome_net
@@ -276,6 +323,7 @@ networks:
     name: odoo-prod-new_odoo-network
 
 volumes:
+  stock_db_data:
   erp_db_data:
   erp_uploads:
   sav_db_data:
